@@ -85,6 +85,11 @@ if __name__ == "__main__":
         )
         tt.train_end()
 
+        model.save_checkpoint(
+            os.path.join(params["model_root"], entity, "model.pt")
+        )
+        pp.save(params["model_root"])
+        
         train_anomaly_score = model.predict_prob(train_loader)
 
         tt.test_start()

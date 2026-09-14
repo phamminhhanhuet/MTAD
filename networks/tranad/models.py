@@ -122,3 +122,100 @@ class TranAD(nn.Module):
         else:
             anomaly_label = (np.sum(label_windows, axis=1) >= 1) + 0
             return anomaly_score, anomaly_label
+
+
+    def _prepare_batch(self, batch):
+        batch = batch.to(self.device, non_blocking=True)
+        batch_size = batch.shape[0]
+        print("Prepare batch - batch shape ", batch.shape)
+        window = batch.permute(1, 0, 2)
+        print("Prepare batch - window shape ", window.shape)
+        target = window[-1].view(1, batch_size, self.n_feats)
+        return window, target
+
+
+    def predict_scores(self, dataloader):
+        """Sinh một anomaly score cho đúng timestep cuối của mỗi window."""
+        self.eval()
+        scores = []
+
+        with torch.inference_mode():
+            for batch in dataloader:
+                window, target = self._prepare_batch(batch)
+                _, x2 = self(window, target)
+                # Mean reconstruction MSE trên toàn bộ feature của entity.
+                batch_scores = ((x2 - target) ** 2)[0].mean(dim=1)
+                scores.append(batch_scores.cpu().numpy())
+
+        if not scores:
+            return np.empty(0, dtype=np.float32)
+        return np.concatenate(scores).astype(np.float32, copy=False)
+
+
+    def predict_one(self, window):
+        """Inference batch=1 cho một window đã được normalize, dùng để benchmark production."""
+        self.eval()
+        if not torch.is_tensor(window):
+            window = torch.as_tensor(window, dtype=torch.float32)
+
+        if tuple(window.shape) != (self.n_window, self.n_feats):
+            raise ValueError(
+                f"window phải có shape {(self.n_window, self.n_feats)}, nhận {tuple(window.shape)}"
+            )
+
+        with torch.inference_mode():
+            print("Step 0 - window shape ", window.shape)
+            batch = window.unsqueeze(0)
+            print("Step 1 - batch shape ", batch.shape)
+            src, target = self._prepare_batch(batch)
+            print("Step 2 - src shape ", src.shape)
+            print("Step 3 - target shape ", target.shape)
+            _, x2 = self(src, target)
+            return float((((x2 - target) ** 2).mean()).item())
+
+
+    def save_checkpoint(self, checkpoint_path, epoch=None, entity=None):
+        os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+
+        checkpoint = {
+            "model_state_dict": self.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict(),
+            "scheduler_state_dict": self.scheduler.state_dict(),
+            "epoch": epoch,
+            "entity": entity,
+            "n_feats": self.n_feats,
+            "window_size": self.n_window,
+        }
+
+        torch.save(checkpoint, checkpoint_path)
+        logging.info("Saved TranAD checkpoint to %s", checkpoint_path)
+
+
+    def load_checkpoint(self, path, load_optimizer=True):
+        # `weights_only` chỉ có ở PyTorch mới; fallback để chạy được cả version cũ.
+        try:
+            checkpoint = torch.load(
+                path, map_location=self.device, weights_only=False
+            )
+        except TypeError:
+            checkpoint = torch.load(path, map_location=self.device)
+
+        print("Load PARAM from checkpoint ")
+        print("n_window ", checkpoint.get("window_size"), "self.n_window ", self.n_window)
+        print("n_feats ", checkpoint.get("n_feats"), "self.n_feats ", self.n_feats)
+
+        if checkpoint.get("n_feats") != self.n_feats:
+            raise ValueError("Checkpoint có số feature khác model hiện tại")
+        if checkpoint.get("window_size") != self.n_window:
+            raise ValueError("Checkpoint có window_size khác model hiện tại")
+
+        print("Load checkpoint for entity ", checkpoint["entity"])
+
+        self.load_state_dict(checkpoint["model_state_dict"])
+        if load_optimizer:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+            self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
+        self.completed_epochs = int(checkpoint.get("completed_epochs", 0))
+        self.to(self.device)
+        self.eval()

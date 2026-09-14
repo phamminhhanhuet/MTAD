@@ -5,8 +5,8 @@ Base:
 tranad_SMD:
     dataset_id: SMD
     num_workers: 1
-    batch_size: 512
-    window_size: 100
+    batch_size: 16
+    window_size: 30
     stride: 1
     nb_epoch: 10
     device: 3  # -1 for cpu, 0 for cuda:0

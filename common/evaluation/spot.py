@@ -10,7 +10,7 @@ Created on Mon Dec 12 10:08:16 2016
 
 from math import log, floor
 import logging
-from tkinter.font import ROMAN
+# from tkinter.font import ROMAN
 import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
@@ -19,7 +19,7 @@ from scipy.optimize import minimize
 ================================= MAIN CLASS ==================================
 """
 
-
+ROMAN = "roman"
 class SPOT:
     """
     This class allows to run SPOT algorithm on univariate dataset (upper-bound)

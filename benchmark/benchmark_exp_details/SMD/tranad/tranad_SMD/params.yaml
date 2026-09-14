@@ -1,0 +1,48 @@
+batch_size: 16
+benchmark_dir: ./benchmark_results
+data_root: /mnt/c/Users/Hacha/Documents/VHTWork/Datasets/AnomalyDetection//processed_dataset/processed_SMD/
+dataset: smd
+dataset_id: SMD
+device: 0
+dim: 38
+entities:
+- machine-1-1
+- machine-1-2
+eval:
+  best_params:
+    target_direction: max
+    target_metric: f1
+  metrics:
+  - f1
+  - delay
+  point_adjustment:
+  - true
+  - false
+  pot_params:
+    dynamic: false
+    level:
+    - 0.99
+    - 0.98
+    - 0.97
+    - 0.9
+    - 0.8
+    q: 0.01
+  thresholding:
+  - best
+  - pot
+exp_id: tranad_SMD
+hidden_size: 64
+lr: 0.001
+model_id: tranad
+model_root: ./benchmark_exp_details/SMD/tranad/tranad_SMD
+nb_epoch: 10
+normalize: minmax
+nrows: null
+num_workers: 1
+stride: 1
+test_label_postfix: test_label.pkl
+test_postfix: test.pkl
+train_postfix: train.pkl
+uptime: 20260912-235419
+valid_ratio: 0
+window_size: 30

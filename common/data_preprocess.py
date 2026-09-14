@@ -19,6 +19,9 @@ class preprocessor:
         self.vocab_size = None
         self.discretizer_list = defaultdict(list)
 
+        self.scaler_dict = {}
+        self.normalize_method = None
+
     def save(self, filepath):
         filepath = os.path.join(filepath, "preprocessor.pkl")
         logging.info("Saving preprocessor into {}".format(filepath))
@@ -31,32 +34,65 @@ class preprocessor:
         with open(filepath, "rb") as fw:
             self.__dict__.update(pickle.load(fw))
 
+    def transform(self, entity, data):
+        data = np.asarray(data, dtype=np.float32)
+
+        if self.normalize_method == "none":
+            return data
+
+        if entity not in self.scaler_dict:
+            raise KeyError(f"Scaler not found for entity: {entity}")
+
+        scaler = self.scaler_dict[entity]
+
+        if data.ndim == 2:
+            # shape: (window_size, dim) hoặc (T, dim)
+            return scaler.transform(data).astype(np.float32)
+
+        if data.ndim == 3:
+            # shape: (batch_size, window_size, dim)
+            original_shape = data.shape
+            data_2d = data.reshape(-1, original_shape[-1])
+            data_scaled = scaler.transform(data_2d)
+            return data_scaled.reshape(original_shape).astype(np.float32)
+
+        raise ValueError(
+            f"Expected input with 2 or 3 dimensions, got shape={data.shape}"
+        )
+
     def normalize(self, data_dict, method="minmax"):
+        self.normalize_method = method
+
         if method == "none":
             return data_dict
+
         logging.info("Normalizing data with {}".format(method))
         normalized_dict = defaultdict(dict)
+
         for k, subdata_dict in data_dict.items():
-            # method: minmax, standard, robust
-            # fit_transform using train
             if method == "minmax":
                 est = MinMaxScaler()
             elif method == "standard":
                 est = StandardScaler()
             elif method == "robust":
                 est = RobustScaler()
+            else:
+                raise ValueError(f"Unsupported normalize method: {method}")
 
             train_ = est.fit_transform(subdata_dict["train"])
             test_ = est.transform(subdata_dict["test"])
 
-            # assign back
+            # lưu fitted scaler của entity
+            self.scaler_dict[k] = est
+
             normalized_dict[k]["train"] = train_
             normalized_dict[k]["test"] = test_
+
             for subk in subdata_dict.keys():
                 if subk not in ["train", "test"]:
                     normalized_dict[k][subk] = subdata_dict[subk]
-        return normalized_dict
 
+        return normalized_dict
 
 def get_windows(ts, labels=None, window_size=128, stride=1, dim=None):
     i = 0
