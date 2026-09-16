@@ -102,7 +102,7 @@ class MTAD_GAT(nn.Module):
         n_epochs=200,
         batch_size=256,
         init_lr=0.001,
-        model_root="output/",
+        checkpoint_path="output/",
         print_every=1,
     ):
         self.n_epochs = n_epochs
@@ -166,7 +166,8 @@ class MTAD_GAT(nn.Module):
                 logging.info(s)
 
         if val_loader is None:
-            self.save(os.path.join(model_root, "model.pt"))
+            # self.save(checkpoint_path, "model.pt"))
+            self.save_checkpoint(checkpoint_path, epoch=self.n_epochs)
 
         train_time = int(time.time() - train_start)
         logging.info(f"-- Training done in {train_time}s.")
@@ -226,3 +227,38 @@ class MTAD_GAT(nn.Module):
         :param PATH: Should contain pickle file
         """
         self.load_state_dict(torch.load(file_path, map_location=self.device))
+
+    def save_checkpoint(self, file_path, epoch=None):
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        checkpoint = {
+            "model_state_dict": self.state_dict(),
+            "epoch": epoch,
+        }
+
+        if hasattr(self, "optimizer"):
+            checkpoint["optimizer_state_dict"] = self.optimizer.state_dict()
+
+        torch.save(checkpoint, file_path)
+        logging.info(f"Saved MTAD-GAT checkpoint to {file_path}")
+
+
+    def load_checkpoint(self, file_path, load_optimizer=False):
+        checkpoint = torch.load(file_path, map_location=self.device)
+
+        # Support cả checkpoint mới và file state_dict cũ
+        if "model_state_dict" in checkpoint:
+            self.load_state_dict(checkpoint["model_state_dict"])
+        else:
+            self.load_state_dict(checkpoint)
+
+        if load_optimizer and "optimizer_state_dict" in checkpoint:
+            if not hasattr(self, "optimizer"):
+                raise RuntimeError("Optimizer must be initialized before loading optimizer state.")
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        self.to(self.device)
+        self.eval()
+
+        logging.info(f"Loaded MTAD-GAT checkpoint from {file_path}")
+        return checkpoint

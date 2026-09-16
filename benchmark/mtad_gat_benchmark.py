@@ -96,15 +96,21 @@ if __name__ == "__main__":
         tt = TimeTracker(nb_epoch=params["nb_epoch"])
 
         tt.train_start()
+        entity_model_root = os.path.join(params["model_root"], entity)
+        checkpoint_path = os.path.join(entity_model_root, "model.pt")
+        
         model.fit(
             train_loader,
             val_loader=None,
             n_epochs=params["nb_epoch"],
             batch_size=params["batch_size"],
             init_lr=params["init_lr"],
-            model_root=params["model_root"],
+            checkpoint_path=checkpoint_path,
         )
         tt.train_end()
+
+        
+
 
         train_anomaly_score = model.predict_prob(train_loader, gamma=params["gamma"])
 
