@@ -101,7 +101,13 @@ class UsadModel(nn.Module):
         )
 
     def fit(
-        self, windows_train, windows_val, epochs, batch_size, opt_func=torch.optim.Adam
+        self, 
+        windows_train, 
+        windows_val, 
+        epochs, 
+        batch_size, 
+        opt_func=torch.optim.Adam, 
+        checkpoint_path=""
     ):
         self.to(self.device)
         train_loader = torch.utils.data.DataLoader(
@@ -166,7 +172,32 @@ class UsadModel(nn.Module):
         else:
             return y_pred
 
+    def save_checkpoint(self, file_path, epoch=None):
+        import os 
+        dir_name = os.path.dirname(file_path)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        checkpoint = {
+            "model_state_dict": self.state_dict(),
+            "encoder_state_dict": self.encoder.state_dict(),
+            "decoder1_state_dict": self.decoder1.state_dict(),
+            "decoder2_state_dict": self.decoder2.state_dict(),
+            "epoch": epoch,
+        }
+        torch.save(self.state_dict(), file_path)
+        logging.info("Save USAD Model checkpoint saved at {}".format(file_path))
 
+    def load_checkpoint(self, file_path):
+        checkpoint = torch.load(file_path, map_location=self.device)
+        if "model_state_dict" in checkpoint:
+            self.load_state_dict(checkpoint["model_state_dict"])
+        else:
+            self.load_state_dict(checkpoint)
+        self.to(self.device)
+        self.eval()
+        logging.info("USAD Model checkpoint loaded from {}".format(file_path))
+        return checkpoint
+    
 def evaluate(model, val_loader, n, device="cpu"):
     outputs = [
         model.validation_step(to_device(batch, device), n) for [batch] in val_loader

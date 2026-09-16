@@ -4,8 +4,8 @@ Base:
 
 usad_SMD:
     dataset_id: SMD
-    batch_size: 512
-    window_size: 100
+    batch_size: 16
+    window_size: 30
     stride: 1
     num_workers: 1
     device: 0  # -1 for cpu, 0 for cuda:0stride: 5

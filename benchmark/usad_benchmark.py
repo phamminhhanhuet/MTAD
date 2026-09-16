@@ -1,6 +1,8 @@
+
 import sys
 
 sys.path.append("../")
+import os 
 import logging
 from common import data_preprocess
 from common.dataloader import load_dataset
@@ -71,11 +73,16 @@ if __name__ == "__main__":
         tt = TimeTracker(nb_epoch=params["nb_epoch"])
 
         tt.train_start()
+
+        entity_model_root = os.path.join(params["model_root"], entity)
+        checkpoint_path = os.path.join(entity_model_root, "usad_model.pt")
+        
         model.fit(
             windows_train=train_windows,
             windows_val=None,
             epochs=params["nb_epoch"],
             batch_size=params["batch_size"],
+            checkpoint_path=checkpoint_path
         )
         tt.train_end()
 
@@ -91,6 +98,8 @@ if __name__ == "__main__":
         )
         tt.test_end()
 
+        pp.save(params["model_root"])
+
         store_entity(
             params,
             entity,
@@ -99,6 +108,8 @@ if __name__ == "__main__":
             anomaly_label,
             time_tracker=tt.get_data(),
         )
+
+        
     evaluator.eval_exp(
         exp_folder=params["model_root"],
         entities=params["entities"],

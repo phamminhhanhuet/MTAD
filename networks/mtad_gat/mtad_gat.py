@@ -184,11 +184,16 @@ class MTAD_GAT(nn.Module):
                 x = x.to(self.device)
                 y = y.to(self.device)
 
+                print("X shape ", x.shape, " X value ", x)
+                print("Y shape ", y.shape, " Y value ", y)
+
                 y_hat, _ = self(x)
+                print("Y_hat shape ", y_hat.shape, " Y_hat value ", y_hat)
 
                 # Shifting input to include the observed value (y) when doing the reconstruction
                 recon_x = torch.cat((x[:, 1:, :], y), dim=1)
                 _, window_recon = self(recon_x)
+                print("Window reconstruction shape ", window_recon.shape, " Window reconstruction value ", window_recon)
 
                 preds.append(y_hat.detach().cpu().numpy())
                 # Extract last reconstruction only
@@ -208,6 +213,7 @@ class MTAD_GAT(nn.Module):
             )
             anomaly_scores[:, i] = a_score
         anomaly_scores = np.mean(anomaly_scores, 1)
+        print("Anomaly scores shape:", anomaly_scores.shape, " Anomaly scores value:", anomaly_scores)
         if window_labels is not None:
             anomaly_label = (window_labels.sum(axis=1) > 0).astype(int)
             return anomaly_scores, anomaly_label

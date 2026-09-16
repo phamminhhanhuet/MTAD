@@ -109,8 +109,7 @@ if __name__ == "__main__":
         )
         tt.train_end()
 
-        
-
+        pp.save(params["model_root"])
 
         train_anomaly_score = model.predict_prob(train_loader, gamma=params["gamma"])
 
