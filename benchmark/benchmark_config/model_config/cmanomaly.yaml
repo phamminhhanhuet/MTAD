@@ -1,0 +1,37 @@
+Base:
+    model_id: cmanomaly
+    normalize: "minmax"
+    window_size: 32
+    stride: 5
+    batch_size: 1024
+    test_batch_size: 4096
+    num_workers: 1
+    nb_epoch: 100
+    lr: 0.01
+    gamma: 1
+    inter: "FM"
+    dropout: 0
+    prediction_length: 1
+    prediction_dims: []
+    patience: 3
+    device: 0
+
+cmanomaly_SMD:
+    dataset_id: SMD
+
+cmanomaly_ASD:
+    dataset_id: ASD
+
+cmanomaly_SWAT:
+    dataset_id: SWAT
+
+cmanomaly_WADI:
+    dataset_id: WADI
+
+cmanomaly_SMAP:
+    dataset_id: SMAP
+    prediction_dims: [0]
+
+cmanomaly_MSL:
+    dataset_id: MSL
+    prediction_dims: [0]
