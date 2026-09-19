@@ -143,6 +143,7 @@ class UsadModel(nn.Module):
             opt_func=opt_func,
             device=self.device,
         )
+        self.save_checkpoint(checkpoint_path, epoch=epochs )
 
     def predict_prob(self, windows_test, batch_size, windows_label=None):
         self.to(self.device)
@@ -184,7 +185,7 @@ class UsadModel(nn.Module):
             "decoder2_state_dict": self.decoder2.state_dict(),
             "epoch": epoch,
         }
-        torch.save(self.state_dict(), file_path)
+        torch.save(checkpoint, file_path)
         logging.info("Save USAD Model checkpoint saved at {}".format(file_path))
 
     def load_checkpoint(self, file_path):
@@ -219,6 +220,7 @@ def training(
         logging.info(f"Training epoch: {epoch}..")
         for [batch] in train_loader:
             batch = to_device(batch, device)
+            print("training batch shape ", batch.shape)
             # Train AE1
             loss1, loss2 = model.training_step(batch, epoch + 1)
             loss1.backward()
@@ -245,6 +247,7 @@ def testing(model, test_loader, alpha=0.5, beta=0.5, device="cpu"):
         results = []
         for [batch] in test_loader:
             batch = to_device(batch, device)
+            print("Testing batch shape ", batch.shape)
             w1 = model.decoder1(model.encoder(batch))
             w2 = model.decoder2(model.encoder(w1))
             results.append(

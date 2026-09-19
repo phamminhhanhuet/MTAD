@@ -1,0 +1,33 @@
+Base:
+    model_id: streaming_loda
+    normalize: "minmax"
+    n_histograms: 100
+    histograms_per_batch: 1
+    memory: 5
+    score_decay: 1.0
+    padding: 0.1
+    epsilon: 1.0e-10
+    standardize_window: true
+    update_on_test: true
+    batch_size: 1000
+
+streaming_loda_SMD:
+    dataset_id: SMD
+
+streaming_loda_ASD:
+    dataset_id: ASD
+
+streaming_loda_SWAT:
+    dataset_id: SWAT
+
+streaming_loda_WADI:
+    dataset_id: WADI
+
+streaming_loda_SMAP:
+    dataset_id: SMAP
+
+streaming_loda_MSL:
+    dataset_id: MSL
+
+streaming_loda_industry:
+    dataset_id: industry
